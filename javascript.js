@@ -10,65 +10,89 @@ firebase.initializeApp(config);
 
 var dataRef = firebase.database();
 
-// Initial Values
-var trainNumber = "";
-var destination = "";
-var frequency = 0;
-var nextArrival = "";
-var minutesAway = "";
-
-// Capture Button Click
+// Capture button click for adding new train
 $("#add-train").on("click", function (event) {
 	event.preventDefault();
-	console.log(event);
-	// YOUR TASK!!!
-	// Code in the logic for storing and retrieving the most recent user.
-	// Don't forget to provide initial data to your Firebase database.
-	trainNumber = $("#trainNumber-input").val().trim();
-	destination = $("#destination-input").val().trim();
-	frequency = $("#frequency-input").val().trim();
-	nextArrival = $("#nextArrival-input").val().trim();
-	// minutesAway = $("#minutesAway-input").val().trim();
-	console.log('TESTING', trainNumber, destination, frequency, nextArrival)
-	// Code for the push
-	dataRef.ref().push({
-		trainNumber: trainNumber,
-		destination: destination,
-		frequency: frequency,
-		nextArrival: nextArrival,
-		minutesAway: minutesAway,
+	
+	// Grabs new train data that was added by user
+	var newTrainNumber = $("#trainNumber-input").val().trim();
+	var newDestination = $("#destination-input").val().trim();
+	var newFirstTrainTime = $("#firstTrainTime-input").val().trim();
+	var newFrequency = $("#frequency-input").val().trim();
 
-		// dateAdded: firebase.database.ServerValue.TIMESTAMP
-	});
+
+	// Temporarily stores the new train data
+	var newSchedule = {
+		trainNumber: newTrainNumber,
+		destination: newDestination,
+		firstTrainTime: newFirstTrainTime,
+		frequency: newFrequency,
+
+	};
+	
+	// Pushes new train data into Firebase
+	dataRef.ref().push(newSchedule);
+
+ // Alert
+ alert("Train successfully added");
+
+ // Clears all of the new train data from the form
+ $("#trainNumber-input").val("");
+ $("#destination-input").val("");
+ $("#frequency-input").val("");
+ $("#firstTrainTime-input").val("");
+
 });
 
-// Firebase watcher + initial loader HINT: This code behaves similarly to .on("value")
+// Creates Firebase event
 dataRef.ref().on("child_added", function (childSnapshot) {
 
-	// Log everything that's coming out of snapshot
-	// console.log(childSnapshot.val().name);
-	console.log(childSnapshot.val().trainNumber);
-	console.log(childSnapshot.val().destination);
-	console.log(childSnapshot.val().frequency);
-	console.log(childSnapshot.val().nextArrival);
-	console.log(childSnapshot.val().minutesAway);
+	console.log(childSnapshot.val());
 
-	// full list of items to the well
-	// $("#full-member-list").append("<div class='well'><span class='member-name'> " + childSnapshot.val().name +
-	// 	" </span><span class='member-email'> " + childSnapshot.val().email +
-	// 	" </span><span class='member-age'> " + childSnapshot.val().age +
-	// 	" </span><span class='member-comment'> " + childSnapshot.val().comment + " </span></div>");
+	// Stores new train data in variables
+	
+	var newTrainNumber = childSnapshot.val().trainNumber;
+	var newDestination = childSnapshot.val().destination;
+	var newFirstTrainTime = childSnapshot.val().firstTrainTime;
+	console.log(newFirstTrainTime);
+	var newFrequency = childSnapshot.val().frequency;
 
-	// Handle the errors
-}, function (errorObject) {
-	console.log("Errors handled: " + errorObject.code);
-});
-dataRef.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function (snapshot) {
+	
+// Math
 
-	// Change the HTML to reflect
-	$("#trainNumber-display").text(snapshot.val().trainNumber);
-	$("#destination-display").text(snapshot.val().destination);
-	$("#frequency-display").text(snapshot.val().frequency);
-	$("#nextArrival-display").text(snapshot.val().nextArrival);
-	$("#minutesAway-display").text(snapshot.val().minutesAway);
+	// First train time pushed back one day
+	var newFirstTrainTimeConverted = moment(newFirstTrainTime, "HH:mm").subtract(1, "days");
+	console.log(newFirstTrainTimeConverted);
+
+	// Current Time
+	var currentTime = moment();
+	console.log("CURRENT TIME: " + moment(currentTime).format("HH:mm"));
+
+	// Difference between the times
+	var diffTime = moment().diff(newFirstTrainTimeConverted, "minutes");
+	console.log("DIFFERENCE IN TIME: " + diffTime);
+
+// Time apart (remainder)
+//make sure you understand next line!!!!!!!!!!!
+var tRemainder = diffTime % newFrequency;
+console.log(tRemainder);
+
+// Minutes Until Train
+//make sure you understand next line!!!!!!!!!!!
+var newMinutesAway = newFrequency - tRemainder;
+console.log("MINUTES TILL TRAIN: " + newMinutesAway);
+
+// Next Train
+var newNextArrival = moment().add(newMinutesAway, "minutes");
+console.log("ARRIVAL TIME: " + moment(newNextArrival).format("HH:mm"));
+  // Add new train data into the table
+
+		$("#current-schedule > tbody").append("<tr><td>" 
+		+ newTrainNumber + "</td><td>" 
+		+ newDestination + "</td><td>" 
+		// + newfirstTrainTime + "</td><td>" 
+		+ newFrequency + "</td><td>" 
+		+ newNextArrival.format("HH:mm") + "</td><td>"
+		+ newMinutesAway + "</td><td>"
+		+ "</td></tr>");
 });
